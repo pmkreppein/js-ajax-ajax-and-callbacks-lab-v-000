@@ -1,44 +1,42 @@
+const base = "https://api.github.com"
 
-var displayError = () => $('#errors').html("I'm sorry, there's been an error. Please try again.")
-
-var renderCommit = (commit) => {
-  return `<li><h3>${commit.sha}</h3><p>${commit.commit.message}</p></li>`
+function displayError() {
+  $("#errors").html("I'm sorry, there's been an error. Please try again.");
 }
 
-var renderCommits = (data) => {
-  let result = data.map((commit)=>renderCommit(commit)).join('')
-  return `<ul>${result}</ul>`
+function searchRepositories() {
+  const searchTerms = $("#searchTerms").val();
+  const searchUrl = `${base}/search/repositories?q=${searchTerms}`;
+
+  $.get(searchUrl, data => displaySearchResults(data)).fail(error => displayError());
 }
 
-var showCommits = (el) => {
-  $.get(`https://api.github.com/repos/${el.dataset.owner}/${el.dataset.repository}/commits`, data => {
-    $('#details').html(renderCommits(data))
-  }).fail(error => {
-    displayError()
-  })
-}
-
-var renderSearchResult = (result) => {
-  return `
+function displaySearchResults(results) {
+  const resultString = results.items.map(result => {
+    return `
       <div>
         <h2><a href="${result.html_url}">${result.name}</a></h2>
         <p><a href="#" data-repository="${result.name}" data-owner="${result.owner.login}" onclick="showCommits(this)">Show Commits</a></p>
         <p>${result.description}</p>
       </div>
       <hr>
-    `
+      `
+  });
+
+  console.log(resultString);
+
+  $("#results").html(resultString);
 }
 
-var renderSearchResults = (data) => data.items.map( result => renderSearchResult(result))
-
-var searchRepositories = () => {
-  const searchTerms = $('#searchTerms').val()
-  $.get(`https://api.github.com/search/repositories?q=${searchTerms}`, data => {
-      $('#results').html(renderSearchResults(data))
-    }).fail(error => {
-      displayError()
-    })
+function showCommits(el) {
+  const owner = el.dataset.owner;
+  const repo = el.dataset.repository;
+  const url = `${base}/repos/${owner}/${repo}/commits`;
+  $.get(url, data => displayCommits(data)).fail(error => displayError());
 }
 
-$(document).ready(function (){
-})
+function displayCommits(data) {
+  const commits = data.map(commit => `<li><h3>${commit.sha}</h3><p>${commit.commit.message}</p></li>`).join("");
+  const commitsString = `<ul>${commits}</ul>`
+  $("#details").html(commitsString);
+}
